@@ -244,9 +244,9 @@ namespace MTConnect.Clients
                             sampleStream.ConnectionError += ProcessConnectionError;
                             await sampleStream.Run();
                         }
-                    } while (!stop.IsCancellationRequested);
+                    } while (!stop.Token.WaitHandle.WaitOne(RetryInterval, true) || !stop.IsCancellationRequested);
                 }
-            } while (!stop.IsCancellationRequested);
+            } while (!stop.Token.WaitHandle.WaitOne(RetryInterval, true) || !stop.IsCancellationRequested);
 
             Stopped?.Invoke();
         }

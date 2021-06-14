@@ -101,10 +101,28 @@ namespace MTConnect.Clients
                 response.EnsureSuccessStatusCode();
                 return await ProcessResponse(response, cancellationToken);
             }
-            catch (HttpRequestException e)
+            catch (Exception e)
             {
-                ConnectionError?.Invoke(e);
+                if (e is HttpRequestException ex) {
+                    ConnectionError?.Invoke(ex);
+                }
+                else if (e is TaskCanceledException ex1) {
+                    if (ex1.CancellationToken == cancellationToken) {
+                        ConnectionError?.Invoke(ex1); // a real cancellation, triggered by the caller
+                    }
+                    else {
+                        try {
+                            throw new TimeoutException("Timeout probing, actual exception message would be: " + ex1.Message); // a web request timeout
+                        }
+                        catch (TimeoutException ex2) {
+                            ConnectionError?.Invoke(ex2);
+                        }
+                    }
+                }
             }
+            //catch (HttpRequestException e) {
+            //    ConnectionError?.Invoke(e);
+            //}
 
             return null;
         }
